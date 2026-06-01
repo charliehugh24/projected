@@ -1,0 +1,581 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
+<title>Projected</title>
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;1,400&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet">
+<style>
+*{margin:0;padding:0;box-sizing:border-box;}
+:root{--bg:#fff;--surface:#fff;--surface2:#f7f7f7;--surface3:#f0f0f0;--text:#000;--text-muted:#999;--text-dim:#bbb;--border:rgba(0,0,0,0.09);--border-bright:rgba(0,0,0,0.22);}
+body{background:var(--bg);min-height:100vh;display:flex;align-items:flex-start;justify-content:center;font-family:'DM Sans',sans-serif;color:var(--text);}
+.app{width:100%;max-width:420px;padding:0 1.25rem;}
+.screen{display:none;}
+.screen.active{display:flex;flex-direction:column;gap:1.4rem;}
+
+/* INTRO */
+
+.logo{font-family:'Playfair Display',serif;font-size:2rem;color:#000;letter-spacing:.1em;text-align:center;}
+.logo-sub{font-size:.62rem;letter-spacing:.26em;text-transform:uppercase;color:#bbb;margin-top:.25rem;text-align:center;}
+
+
+.page-overlay{position:fixed;inset:0;background:#000;z-index:9999;opacity:0;pointer-events:none;transition:opacity .35s ease;}
+.page-overlay.show{opacity:1;pointer-events:all;}
+@keyframes fadeInUp{from{opacity:0;transform:translateY(16px);}to{opacity:1;transform:translateY(0);}}
+.screen.anim{animation:fadeInUp .4s ease forwards;}
+.orb-wrap{position:relative;width:185px;height:185px;cursor:pointer;transition:transform .3s ease,filter .3s ease;}
+.orb-wrap:hover{transform:scale(1.04);}
+.orb-wrap:active{transform:scale(.94);}
+
+
+.orb-glow{position:absolute;inset:-14px;border-radius:50%;background:radial-gradient(circle,rgba(0,0,0,0.04) 0%,transparent 70%);animation:breathe 3s ease-in-out infinite;}
+
+
+@keyframes breathe{0%,100%{transform:scale(1);}50%{transform:scale(1.07);}}
+@keyframes spin{to{transform:rotate(360deg);}}
+.orb-img{width:185px;height:185px;display:block;animation:float 4s ease-in-out infinite;}
+@keyframes float{0%,100%{transform:translateY(0);}50%{transform:translateY(-7px);}}
+.tap-main{font-family:'Playfair Display',serif;font-size:1.18rem;color:#000;line-height:1.55;text-align:center;}
+.tap-main em{font-style:italic;color:#666;}
+.tap-hint{font-size:.65rem;letter-spacing:.2em;text-transform:uppercase;color:#ccc;margin-top:.5rem;text-align:center;animation:blink 2.4s ease-in-out infinite;}
+@keyframes blink{0%,100%{opacity:.35;}50%{opacity:1;}}
+
+
+.s-intro-inner{
+  height:100vh;
+  display:grid;
+  grid-template-rows:1fr 1fr 1fr;
+  align-items:center;
+  justify-items:center;
+  padding:2rem 1.5rem;
+  width:100%;
+}
+.orb-zone{
+  display:flex;
+  flex-direction:column;
+  align-items:center;
+  gap:1.5rem;
+}
+.intro-bottom{
+  width:100%;
+  display:flex;
+  flex-direction:column;
+  align-items:center;
+  gap:.8rem;
+  align-self:end;
+  padding-bottom:1rem;
+}
+
+.tagline-bot{font-size:.6rem;letter-spacing:.18em;text-transform:uppercase;color:#ddd;}
+
+/* SHARED BUTTONS */
+.btn-black{width:100%;background:#000;color:#fff;border:none;border-radius:12px;padding:.9rem;font-family:'DM Sans',sans-serif;font-size:.9rem;font-weight:500;cursor:pointer;transition:opacity .2s;}
+.btn-black:hover{opacity:.82;}
+.btn-black:disabled{opacity:.3;cursor:not-allowed;}
+.btn-ghost{width:100%;background:transparent;color:#aaa;border:.5px solid #ddd;border-radius:12px;padding:.75rem;font-family:'DM Sans',sans-serif;font-size:.82rem;cursor:pointer;transition:border-color .2s,color .2s;}
+.btn-ghost:hover{border-color:#999;color:#333;}
+
+/* CHAT */
+.chat-header{display:flex;align-items:center;gap:1rem;padding:1.8rem 0 1.4rem;border-bottom:.5px solid #f0f0f0;}
+.avatar-sm{width:48px;height:48px;border-radius:50%;border:.5px solid #e8e8e8;display:flex;align-items:center;justify-content:center;font-size:.8rem;color:#000;flex-shrink:0;background:#fafafa;}
+.chat-hinfo h3{font-family:'Playfair Display',serif;font-size:1.25rem;font-weight:400;color:#000;letter-spacing:.01em;}
+.chat-hinfo span{font-size:.62rem;color:#ccc;letter-spacing:.16em;text-transform:uppercase;margin-top:.15rem;display:block;}
+.messages{display:flex;flex-direction:column;gap:1.8rem;min-height:200px;max-height:420px;overflow-y:auto;padding:1.2rem 0;}
+.messages::-webkit-scrollbar{width:2px;}
+.messages::-webkit-scrollbar-thumb{background:#eee;border-radius:2px;}
+.msg{display:flex;gap:1rem;align-items:flex-start;opacity:0;transform:translateY(6px);animation:fadeUp .3s forwards;}
+.msg.user{flex-direction:row-reverse;}
+@keyframes fadeUp{to{opacity:1;transform:translateY(0);}}
+.bubble{max-width:78%;padding:1.1rem 1.4rem;border-radius:22px;font-size:.95rem;line-height:1.85;}
+.msg.ai .bubble{background:#f7f7f7;color:#000;border-bottom-left-radius:6px;border:none;}
+.msg.user .bubble{background:#000;color:#fff;border-bottom-right-radius:6px;}
+.typing{display:flex;gap:4px;align-items:center;padding:.65rem .9rem;}
+.typing span{width:5px;height:5px;background:#999;border-radius:50%;animation:pulse 1.2s ease-in-out infinite;}
+.typing span:nth-child(2){animation-delay:.2s;}
+.typing span:nth-child(3){animation-delay:.4s;}
+@keyframes pulse{0%,80%,100%{opacity:.3;transform:scale(.8);}40%{opacity:1;transform:scale(1);}}
+.input-area{display:flex;gap:.75rem;align-items:flex-end;padding-top:.75rem;}
+.input-area textarea{flex:1;background:#f5f5f5;border:none;border-radius:16px;padding:.95rem 1.2rem;color:#000;font-family:'DM Sans',sans-serif;font-size:.92rem;resize:none;outline:none;min-height:52px;max-height:110px;line-height:1.55;transition:background .2s;}
+.input-area textarea:focus{background:#efefef;}
+.input-area textarea::placeholder{color:#ccc;}
+.send-btn{width:52px;height:52px;background:#000;border:none;border-radius:16px;cursor:pointer;display:flex;align-items:center;justify-content:center;font-size:1.1rem;color:#fff;font-weight:700;flex-shrink:0;transition:opacity .2s;}
+.send-btn:hover{opacity:.8;}
+.send-btn:disabled{opacity:.25;cursor:not-allowed;}
+
+/* GOALS */
+.goals-label{font-size:.68rem;text-transform:uppercase;letter-spacing:.14em;color:#bbb;}
+.goals-grid{display:grid;grid-template-columns:1fr 1fr;gap:.75rem;}
+.goal-btn{background:#fff;border:1px solid #e8e8e8;border-radius:16px;padding:1rem 1rem;color:#000;font-family:'DM Sans',sans-serif;font-size:.82rem;text-align:left;cursor:pointer;transition:border-color .2s,background .2s;display:flex;align-items:flex-start;gap:.55rem;}
+.goal-btn:hover{border-color:#999;background:#fafafa;}
+.goal-btn.selected{border-color:#000;background:#000;}
+.goal-btn.selected .goal-title{color:#fff;}
+.goal-btn.selected .goal-sub{color:#888;}
+.goal-check{width:17px;height:17px;border-radius:50%;border:1px solid #ddd;display:flex;align-items:center;justify-content:center;flex-shrink:0;margin-top:1px;font-size:.58rem;color:#fff;font-weight:700;transition:background .2s,border-color .2s;}
+.goal-btn.selected .goal-check{background:#fff;border-color:#fff;color:#000;}
+.goal-icon{font-size:1rem;flex-shrink:0;}
+.goal-title{font-weight:500;font-size:.82rem;color:#000;line-height:1.3;}
+.goal-sub{font-size:.7rem;color:#aaa;margin-top:.3rem;}
+
+/* PAYWALL */
+.pw-header{text-align:center;padding-top:.5rem;}
+.pw-header h2{font-family:'Playfair Display',serif;font-size:1.4rem;font-weight:400;color:#000;margin-bottom:.25rem;}
+.pw-header p{font-size:.83rem;color:#aaa;}
+.blueprint-preview{background:#fff;border:1px solid #e8e8e8;border-radius:16px;overflow:hidden;}
+.bp-label{font-size:.65rem;text-transform:uppercase;letter-spacing:.14em;color:#000;padding:.85rem 1rem .35rem;border-bottom:.5px solid #eee;}
+.bp-row{display:flex;align-items:flex-start;gap:.75rem;padding:.9rem 1.2rem;border-bottom:.5px solid #eee;}
+.bp-row:last-child{border-bottom:none;}
+.bp-week{font-size:.68rem;color:#aaa;font-weight:500;min-width:50px;flex-shrink:0;padding-top:.1rem;}
+.bp-title{font-size:.83rem;font-weight:500;color:#000;margin-bottom:.15rem;}
+.bp-desc{font-size:.75rem;color:#888;line-height:1.5;}
+.bp-blurred{filter:blur(5px);opacity:.3;pointer-events:none;user-select:none;}
+.bp-lock-row{display:flex;align-items:center;justify-content:center;padding:.85rem;gap:.5rem;background:#fafafa;border-top:.5px solid #eee;}
+.bp-lock-text{font-size:.8rem;color:#aaa;}
+.bp-lock-badge{background:#000;color:#fff;font-size:.7rem;font-weight:500;padding:.25rem .65rem;border-radius:20px;}
+.price-section{background:#fff;border:1px solid #e8e8e8;border-radius:16px;padding:1.3rem;text-align:center;}
+.price-big{font-family:'Playfair Display',serif;font-size:3.2rem;color:#000;line-height:1;}
+.price-period{font-size:.78rem;color:#aaa;margin-top:.2rem;}
+.perks-grid{display:grid;grid-template-columns:1fr 1fr;gap:.7rem;margin-top:1.2rem;}
+.perk-card{background:#fafafa;border:.5px solid #eee;border-radius:14px;padding:1rem;display:flex;align-items:flex-start;gap:.55rem;}
+.perk-icon{font-size:1rem;flex-shrink:0;margin-top:.05rem;}
+.perk-title{font-size:.8rem;font-weight:500;color:#000;margin-bottom:.08rem;}
+.perk-desc{font-size:.7rem;color:#aaa;line-height:1.4;}
+
+/* DASHBOARD */
+.db-header{display:flex;align-items:center;justify-content:space-between;padding-bottom:.85rem;border-bottom:.5px solid #eee;margin-top:.5rem;}
+.db-header h2{font-family:'Playfair Display',serif;font-size:1.1rem;font-weight:400;color:#000;}
+.streak{background:#fafafa;border:.5px solid #eee;border-radius:8px;padding:.25rem .55rem;font-size:.73rem;color:#000;}
+.nav-tabs{display:flex;gap:.3rem;background:#f5f5f5;border-radius:14px;padding:.3rem;}
+.nav-tab{flex:1;background:transparent;border:none;border-radius:10px;padding:.55rem;font-family:'DM Sans',sans-serif;font-size:.73rem;color:#aaa;cursor:pointer;transition:background .2s,color .2s;text-align:center;}
+.nav-tab.active{background:#fff;color:#000;}
+.tab-pane{display:none;flex-direction:column;gap:1.2rem;}
+.tab-pane.active{display:flex;}
+.prog-section{background:#fff;border:.5px solid #eee;border-radius:16px;padding:1.3rem;}
+.prog-label{display:flex;justify-content:space-between;font-size:.75rem;color:#aaa;margin-bottom:.5rem;}
+.prog-bar{height:3px;background:#f0f0f0;border-radius:2px;overflow:hidden;}
+.prog-fill{height:100%;background:#000;border-radius:2px;transition:width 1.1s ease;}
+.sec-title{font-size:.68rem;text-transform:uppercase;letter-spacing:.14em;color:#ccc;}
+.todo-list{display:flex;flex-direction:column;gap:.6rem;}
+.todo-item{display:flex;align-items:center;gap:.75rem;background:#fff;border:.5px solid #eee;border-radius:12px;padding:.85rem 1rem;cursor:pointer;transition:border-color .2s;}
+.todo-item:hover{border-color:#999;}
+.todo-item.done{opacity:.38;}
+.chk{width:18px;height:18px;border-radius:5px;border:1px solid #ddd;display:flex;align-items:center;justify-content:center;flex-shrink:0;transition:background .2s,border-color .2s;}
+.todo-item.done .chk{background:#000;border-color:#000;}
+.chkmark{display:none;color:#fff;font-size:.62rem;font-weight:700;}
+.todo-item.done .chkmark{display:block;}
+.todo-text{font-size:.84rem;flex:1;color:#000;}
+.todo-item.done .todo-text{text-decoration:line-through;color:#bbb;}
+.stats-row{display:grid;grid-template-columns:repeat(3,1fr);gap:.75rem;}
+.stat-card{background:#fafafa;border:.5px solid #eee;border-radius:12px;padding:.9rem;text-align:center;}
+.stat-val{font-family:'Playfair Display',serif;font-size:1.2rem;color:#000;}
+.stat-lbl{font-size:.67rem;color:#aaa;margin-top:.1rem;}
+.vision-grid{display:grid;grid-template-columns:1fr 1fr;gap:.85rem;}
+.vision-card{background:#fafafa;border:.5px solid #eee;border-radius:16px;overflow:hidden;position:relative;aspect-ratio:1;cursor:pointer;transition:border-color .2s;}
+.vision-card:hover{border-color:#bbb;}
+.vision-card-photo{width:100%;height:100%;object-fit:cover;display:block;border-radius:16px;}
+.vision-card-overlay{position:absolute;inset:0;background:linear-gradient(to top,rgba(0,0,0,0.55) 0%,transparent 55%);border-radius:16px;}
+.vision-card-info{position:absolute;bottom:0;left:0;right:0;padding:.7rem .75rem;}
+.vision-icon{font-size:1.2rem;margin-bottom:.2rem;}
+.vision-title{font-size:.78rem;font-weight:500;color:#fff;line-height:1.3;}
+.vision-time{font-size:.67rem;color:rgba(255,255,255,0.65);margin-top:.1rem;}
+.vision-add{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:.4rem;height:100%;background:#fafafa;}
+.vision-add-icon{font-size:1.5rem;color:#ccc;}
+.vision-add-text{font-size:.72rem;color:#ccc;letter-spacing:.05em;}
+.vision-card-default{display:flex;flex-direction:column;align-items:center;justify-content:center;height:100%;gap:.3rem;}
+.vision-remove{position:absolute;top:.5rem;right:.5rem;background:rgba(0,0,0,0.45);border:none;border-radius:50%;width:22px;height:22px;color:#fff;font-size:.7rem;cursor:pointer;display:none;align-items:center;justify-content:center;}
+.vision-card:hover .vision-remove{display:flex;}
+.mentor-wrap{background:#fafafa;border:.5px solid #e0e0e0;border-radius:16px;padding:1.3rem;display:flex;gap:.85rem;}
+.mentor-text{font-size:.84rem;color:#666;line-height:1.65;font-style:italic;}
+
+/* ── RESPONSIVE ── */
+
+/* PHONE: full screen, no centering chrome */
+@media(max-width:600px){
+  body{align-items:flex-start;background:#fff;}
+  .app{max-width:100%;padding:0;}
+  
+  .logo{font-size:1.7rem;}
+  .orb-wrap{width:165px;height:165px;}
+  .orb-img{width:165px;height:165px;}
+  .tap-main{font-size:1rem;}
+  .chat-header{padding:1.4rem 1.25rem 1rem;}
+  .messages{padding:1rem 1.25rem;}
+  .input-area{padding:.5rem 1rem .9rem;}
+  .screen#s-chat,.screen#s-paywall,.screen#s-dash{padding:0;}
+  .screen#s-chat > *:not(.chat-header):not(.messages):not(#goals-area):not(.input-area){padding-left:1.25rem;padding-right:1.25rem;}
+  #goals-area{padding:0 1.25rem;}
+  .screen#s-paywall > *{padding-left:1.25rem;padding-right:1.25rem;}
+  .screen#s-dash > *{padding-left:1.25rem;padding-right:1.25rem;}
+  .db-header{padding-top:1.4rem;}
+  .btn-black,.btn-ghost{border-radius:14px;padding:1rem;}
+  .bubble{font-size:.92rem;padding:.9rem 1.1rem;}
+  .vision-grid{grid-template-columns:1fr 1fr;gap:.55rem;}
+  .tab-pane{padding-bottom:2rem;}
+}
+
+/* DESKTOP: centered card with shadow */
+@media(min-width:601px){
+  body{align-items:center;min-height:100vh;background:#f2f2f2;}
+  .app{
+    max-width:400px;
+    min-height:780px;
+    max-height:900px;
+    background:#fff;
+    border-radius:28px;
+    box-shadow:0 24px 80px rgba(0,0,0,0.13),0 4px 16px rgba(0,0,0,0.07);
+    padding:0;
+    overflow:hidden;
+    position:relative;
+    margin:2rem 0;
+  }
+  .screen.active{height:100%;}
+  
+  .screen#s-chat{padding:0 1.5rem;overflow-y:auto;max-height:900px;}
+  .chat-header{padding:1.8rem 0 1.2rem;}
+  .messages{padding:.8rem 0 1rem;max-height:340px;}
+  .input-area{padding:.4rem 0 1.5rem;}
+  #goals-area{padding:0;}
+  .screen#s-paywall{padding:1.5rem 1.5rem 2rem;overflow-y:auto;max-height:900px;}
+  .screen#s-dash{padding:0 1.5rem 2rem;overflow-y:auto;max-height:900px;}
+  .db-header{padding-top:1.8rem;}
+  
+  .orb-wrap{width:180px;height:180px;}
+  .orb-img{width:180px;height:180px;}
+}
+
+</style>
+</head>
+<body>
+<div class="app">
+
+<!-- INTRO -->
+<div class="screen active" id="s-intro">
+  <div class="s-intro-inner">
+    <div>
+      <div class="logo">Projected</div>
+      <div class="logo-sub">Financial intelligence</div>
+    </div>
+    <div class="orb-zone">
+      <div class="orb-wrap" onclick="startChat()">
+        <div class="orb-glow"></div>
+        <svg class="orb-img" viewBox="0 0 150 150" xmlns="http://www.w3.org/2000/svg"><defs><radialGradient id="og" cx="38%" cy="35%" r="65%"><stop offset="0%" stop-color="#ffffff"/><stop offset="40%" stop-color="#e8e8e8"/><stop offset="100%" stop-color="#aaaaaa"/></radialGradient></defs><circle cx="75" cy="75" r="74" fill="url(#og)" stroke="#ccc" stroke-width="0.5"/><g fill="#333" opacity="0.85"><!-- row 1 --><circle cx="75" cy="22" r="3.5"/><circle cx="88" cy="24" r="3.8"/><circle cx="100" cy="30" r="4"/><circle cx="62" cy="24" r="3.8"/><circle cx="50" cy="30" r="4"/><!-- row 2 --><circle cx="110" cy="40" r="4.5"/><circle cx="120" cy="54" r="4.8"/><circle cx="96" cy="42" r="4.5"/><circle cx="82" cy="38" r="4.2"/><circle cx="68" cy="38" r="4.2"/><circle cx="54" cy="42" r="4.5"/><circle cx="40" cy="40" r="4.5"/><circle cx="30" cy="54" r="4.8"/><!-- row 3 --><circle cx="125" cy="70" r="5"/><circle cx="118" cy="84" r="5"/><circle cx="108" cy="58" r="4.8"/><circle cx="96" cy="56" r="4.8"/><circle cx="83" cy="52" r="4.5"/><circle cx="69" cy="52" r="4.5"/><circle cx="56" cy="56" r="4.8"/><circle cx="44" cy="58" r="4.8"/><circle cx="25" cy="70" r="5"/><circle cx="32" cy="84" r="5"/><!-- row 4 --><circle cx="120" cy="98" r="4.8"/><circle cx="110" cy="112" r="4.5"/><circle cx="100" cy="70" r="5.2"/><circle cx="87" cy="66" r="5"/><circle cx="75" cy="64" r="5"/><circle cx="63" cy="66" r="5"/><circle cx="50" cy="70" r="5.2"/><circle cx="40" cy="112" r="4.5"/><circle cx="30" cy="98" r="4.8"/><!-- row 5 --><circle cx="96" cy="84" r="5.2"/><circle cx="83" cy="80" r="5"/><circle cx="75" cy="78" r="5.2"/><circle cx="67" cy="80" r="5"/><circle cx="54" cy="84" r="5.2"/><!-- row 6 --><circle cx="108" cy="98" r="4.8"/><circle cx="96" cy="98" r="5"/><circle cx="84" cy="94" r="5.2"/><circle cx="75" cy="92" r="5.2"/><circle cx="66" cy="94" r="5.2"/><circle cx="54" cy="98" r="5"/><circle cx="42" cy="98" r="4.8"/><!-- row 7 --><circle cx="100" cy="112" r="4.5"/><circle cx="88" cy="108" r="4.8"/><circle cx="75" cy="106" r="5"/><circle cx="62" cy="108" r="4.8"/><circle cx="50" cy="112" r="4.5"/><!-- row 8 --><circle cx="88" cy="122" r="4"/><circle cx="75" cy="120" r="4.2"/><circle cx="62" cy="122" r="4"/><circle cx="75" cy="132" r="3.5"/></g></svg>
+      </div>
+      <div>
+        <div class="tap-main">Tap to meet the<br><em>future version of you</em></div>
+        <div class="tap-hint">↑ tap the orb</div>
+      </div>
+    </div>
+    <div class="intro-bottom">
+      <button class="btn-ghost" onclick="startChat()">Type instead</button>
+      <div class="tagline-bot">Your blueprint is waiting</div>
+    </div>
+  </div>
+</div>
+
+<!-- CHAT -->
+<div class="screen" id="s-chat">
+  <div class="chat-header" style="display:flex;align-items:center;justify-content:space-between;">
+    <div style="display:flex;align-items:center;gap:1rem;">
+      <div class="avatar-sm"><svg viewBox="0 0 36 36" xmlns="http://www.w3.org/2000/svg" style="width:100%;height:100%;border-radius:50%;"><defs><radialGradient id="mg" cx="38%" cy="35%" r="65%"><stop offset="0%" stop-color="#ffffff"/><stop offset="40%" stop-color="#e0e0e0"/><stop offset="100%" stop-color="#999"/></radialGradient></defs><circle cx="18" cy="18" r="17.5" fill="url(#mg)" stroke="#ccc" stroke-width="0.4"/><g fill="#333" opacity="0.8"><circle cx="18" cy="6" r="1"/><circle cx="21" cy="6.5" r="1.1"/><circle cx="24" cy="8" r="1.2"/><circle cx="15" cy="6.5" r="1.1"/><circle cx="12" cy="8" r="1.2"/><circle cx="26.5" cy="11" r="1.3"/><circle cx="28.5" cy="14.5" r="1.4"/><circle cx="23.5" cy="11.5" r="1.3"/><circle cx="20" cy="10.5" r="1.2"/><circle cx="16" cy="10.5" r="1.2"/><circle cx="12.5" cy="11.5" r="1.3"/><circle cx="9.5" cy="11" r="1.3"/><circle cx="7.5" cy="14.5" r="1.4"/><circle cx="29.5" cy="18" r="1.4"/><circle cx="28" cy="22" r="1.4"/><circle cx="26" cy="15.5" r="1.3"/><circle cx="23" cy="15" r="1.3"/><circle cx="20" cy="14" r="1.2"/><circle cx="16" cy="14" r="1.2"/><circle cx="13" cy="15" r="1.3"/><circle cx="10" cy="15.5" r="1.3"/><circle cx="6.5" cy="18" r="1.4"/><circle cx="8" cy="22" r="1.4"/><circle cx="24" cy="18.5" r="1.5"/><circle cx="21" cy="17.5" r="1.4"/><circle cx="18" cy="17" r="1.5"/><circle cx="15" cy="17.5" r="1.4"/><circle cx="12" cy="18.5" r="1.5"/><circle cx="23" cy="22" r="1.4"/><circle cx="20" cy="21" r="1.5"/><circle cx="18" cy="20.5" r="1.5"/><circle cx="16" cy="21" r="1.5"/><circle cx="13" cy="22" r="1.4"/><circle cx="24" cy="26" r="1.3"/><circle cx="21" cy="25" r="1.3"/><circle cx="18" cy="24.5" r="1.4"/><circle cx="15" cy="25" r="1.3"/><circle cx="12" cy="26" r="1.3"/><circle cx="21" cy="29" r="1.1"/><circle cx="18" cy="28.5" r="1.2"/><circle cx="15" cy="29" r="1.1"/><circle cx="18" cy="31.5" r="1"/></g></svg></div>
+      <div class="chat-hinfo"><h3>Future You</h3><span>Financial Mentor</span></div>
+    </div>
+    <button onclick="showScreen('s-intro')" style="background:none;border:none;cursor:pointer;font-size:.78rem;color:#bbb;font-family:'DM Sans',sans-serif;letter-spacing:.05em;">← back</button>
+  </div>
+  <div class="messages" id="messages"></div>
+  <div id="goals-area"></div>
+  <div class="input-area" id="input-area" style="display:none;">
+    <textarea id="user-input" placeholder="Tell me about your situation..." rows="1" onkeydown="handleKey(event)" oninput="autoResize(this)"></textarea>
+    <button class="send-btn" id="send-btn" onclick="sendMessage()">→</button>
+  </div>
+</div>
+
+<!-- PAYWALL -->
+<div class="screen" id="s-paywall">
+  <div class="pw-header">
+    <h2>Your blueprint is ready</h2>
+    <p>Here's a preview of what we built for you</p>
+  </div>
+  <div class="blueprint-preview">
+    <div class="bp-label">Your personalized blueprint</div>
+    <div class="bp-row">
+      <div class="bp-week">Week 1</div>
+      <div><div class="bp-title">Open a high-yield savings account</div><div class="bp-desc">Move your savings to a HYSA earning 4.5%+ APY. Set up auto-deposit of $50/week starting now.</div></div>
+    </div>
+    <div class="bp-row">
+      <div class="bp-week">Week 2</div>
+      <div><div class="bp-title">Cut 1 subscription, redirect it</div><div class="bp-desc">Audit your recurring charges. Cancel the one you use least and move that money to savings automatically.</div></div>
+    </div>
+    <div class="bp-row bp-blurred">
+      <div class="bp-week">Month 1</div>
+      <div><div class="bp-title">Start your first investment</div><div class="bp-desc">Open a Roth IRA or brokerage. Put $25 into VOO. Watch compounding begin.</div></div>
+    </div>
+    <div class="bp-row bp-blurred">
+      <div class="bp-week">Month 2</div>
+      <div><div class="bp-title">Build your income side stack</div><div class="bp-desc">Identify one skill you can monetize. Land your first $100 outside your job.</div></div>
+    </div>
+    <div class="bp-row bp-blurred">
+      <div class="bp-week">Month 3</div>
+      <div><div class="bp-title">Hit your first milestone</div><div class="bp-desc">$1,000 saved. First investment made. The version of you I am began right here.</div></div>
+    </div>
+    <div class="bp-lock-row">
+      <span class="bp-lock-text">Full 90-day plan locked</span>
+      <span class="bp-lock-badge">🔒 Unlock below</span>
+    </div>
+  </div>
+  <div class="price-section">
+    <div class="price-big">$4.99</div>
+    <div class="price-period">per month · cancel anytime</div>
+    <div class="perks-grid">
+      <div class="perk-card"><span class="perk-icon">📋</span><div><div class="perk-title">Daily checklist</div><div class="perk-desc">Auto-updates if you miss a day</div></div></div>
+      <div class="perk-card"><span class="perk-icon">🧭</span><div><div class="perk-title">Personal mentor</div><div class="perk-desc">Chat with your future self anytime</div></div></div>
+      <div class="perk-card"><span class="perk-icon">🎯</span><div><div class="perk-title">Vision board</div><div class="perk-desc">Visual map of your goals</div></div></div>
+      <div class="perk-card"><span class="perk-icon">📈</span><div><div class="perk-title">Progress tracker</div><div class="perk-desc">Streaks, milestones, momentum</div></div></div>
+      <div class="perk-card"><span class="perk-icon">🔄</span><div><div class="perk-title">Live blueprint</div><div class="perk-desc">Updates as your life changes</div></div></div>
+      <div class="perk-card"><span class="perk-icon">📅</span><div><div class="perk-title">Full 90-day plan</div><div class="perk-desc">Every step mapped, week by week</div></div></div>
+    </div>
+    <button class="btn-black" style="margin-top:1rem;" onclick="unlockDash()">Unlock my blueprint →</button>
+  </div>
+  <button class="btn-ghost" onclick="showScreen('s-intro')">Go back</button>
+</div>
+
+<!-- DASHBOARD -->
+<div class="screen" id="s-dash">
+  <div class="db-header">
+    <h2>Your Blueprint</h2>
+    <div class="streak">🔥 3 day streak</div>
+  </div>
+  <div class="nav-tabs">
+    <button class="nav-tab active" onclick="switchTab('today',this)">Today</button>
+    <button class="nav-tab" onclick="switchTab('vision',this)">Vision</button>
+    <button class="nav-tab" onclick="switchTab('mentor',this)">Mentor</button>
+    <button class="nav-tab" onclick="switchTab('progress',this)">Progress</button>
+  </div>
+  <div class="tab-pane active" id="tab-today">
+    <div class="prog-section">
+      <div class="prog-label"><span>Today's progress</span><span id="prog-pct">0%</span></div>
+      <div class="prog-bar"><div class="prog-fill" id="prog-fill" style="width:0%"></div></div>
+    </div>
+    <div class="sec-title">Daily actions</div>
+    <div class="todo-list" id="todo-list"></div>
+  </div>
+  <div class="tab-pane" id="tab-vision">
+    <div class="sec-title">Your vision board</div>
+    <div class="vision-grid" id="vision-grid"></div>
+    <input type="file" id="vision-file-input" accept="image/*" style="display:none;" onchange="handleVisionPhoto(event)">
+  </div>
+  <div class="tab-pane" id="tab-mentor">
+    <div class="sec-title">Your mentor says</div>
+    <div class="mentor-wrap">
+      <div class="avatar-sm" style="width:32px;height:32px;flex-shrink:0;"><svg viewBox="0 0 36 36" xmlns="http://www.w3.org/2000/svg" style="width:100%;height:100%;border-radius:50%;"><defs><radialGradient id="mg" cx="38%" cy="35%" r="65%"><stop offset="0%" stop-color="#ffffff"/><stop offset="40%" stop-color="#e0e0e0"/><stop offset="100%" stop-color="#999"/></radialGradient></defs><circle cx="18" cy="18" r="17.5" fill="url(#mg)" stroke="#ccc" stroke-width="0.4"/><g fill="#333" opacity="0.8"><circle cx="18" cy="6" r="1"/><circle cx="21" cy="6.5" r="1.1"/><circle cx="24" cy="8" r="1.2"/><circle cx="15" cy="6.5" r="1.1"/><circle cx="12" cy="8" r="1.2"/><circle cx="26.5" cy="11" r="1.3"/><circle cx="28.5" cy="14.5" r="1.4"/><circle cx="23.5" cy="11.5" r="1.3"/><circle cx="20" cy="10.5" r="1.2"/><circle cx="16" cy="10.5" r="1.2"/><circle cx="12.5" cy="11.5" r="1.3"/><circle cx="9.5" cy="11" r="1.3"/><circle cx="7.5" cy="14.5" r="1.4"/><circle cx="29.5" cy="18" r="1.4"/><circle cx="28" cy="22" r="1.4"/><circle cx="26" cy="15.5" r="1.3"/><circle cx="23" cy="15" r="1.3"/><circle cx="20" cy="14" r="1.2"/><circle cx="16" cy="14" r="1.2"/><circle cx="13" cy="15" r="1.3"/><circle cx="10" cy="15.5" r="1.3"/><circle cx="6.5" cy="18" r="1.4"/><circle cx="8" cy="22" r="1.4"/><circle cx="24" cy="18.5" r="1.5"/><circle cx="21" cy="17.5" r="1.4"/><circle cx="18" cy="17" r="1.5"/><circle cx="15" cy="17.5" r="1.4"/><circle cx="12" cy="18.5" r="1.5"/><circle cx="23" cy="22" r="1.4"/><circle cx="20" cy="21" r="1.5"/><circle cx="18" cy="20.5" r="1.5"/><circle cx="16" cy="21" r="1.5"/><circle cx="13" cy="22" r="1.4"/><circle cx="24" cy="26" r="1.3"/><circle cx="21" cy="25" r="1.3"/><circle cx="18" cy="24.5" r="1.4"/><circle cx="15" cy="25" r="1.3"/><circle cx="12" cy="26" r="1.3"/><circle cx="21" cy="29" r="1.1"/><circle cx="18" cy="28.5" r="1.2"/><circle cx="15" cy="29" r="1.1"/><circle cx="18" cy="31.5" r="1"/></g></svg></div>
+      <div class="mentor-text">You showed up today. That already puts you ahead of who you were yesterday. The hardest part isn't the money — it's staying consistent when nothing feels like it's moving yet. Trust the process.</div>
+    </div>
+    <div class="messages" id="mentor-msgs" style="max-height:170px;"></div>
+    <div class="input-area">
+      <textarea id="mentor-input" placeholder="Ask your future self anything..." rows="1" oninput="autoResize(this)" onkeydown="if(event.key==='Enter'&&!event.shiftKey){event.preventDefault();askMentor();}"></textarea>
+      <button class="send-btn" onclick="askMentor()">→</button>
+    </div>
+  </div>
+  <div class="tab-pane" id="tab-progress">
+    <div class="sec-title">Your journey</div>
+    <div class="stats-row">
+      <div class="stat-card"><div class="stat-val">3</div><div class="stat-lbl">Day streak</div></div>
+      <div class="stat-card"><div class="stat-val">$150</div><div class="stat-lbl">Saved so far</div></div>
+      <div class="stat-card"><div class="stat-val">12</div><div class="stat-lbl">Tasks done</div></div>
+    </div>
+    <div class="prog-section">
+      <div class="prog-label"><span>30-day goal</span><span>23%</span></div>
+      <div class="prog-bar"><div class="prog-fill" style="width:23%"></div></div>
+      <div style="font-size:.73rem;color:#aaa;margin-top:.5rem;">On track to hit $5,000 by December</div>
+    </div>
+  </div>
+</div>
+
+</div>
+
+<script>
+const API_URL="https://api.anthropic.com/v1/messages";
+let chatStep=0,selectedGoals=[],userProfile={},isSending=false;
+function showScreen(id){document.querySelectorAll('.screen').forEach(s=>s.classList.remove('active'));document.getElementById(id).classList.add('active');}
+function startChat(){
+  const overlay=document.getElementById('overlay');
+  const orb=document.querySelector('.orb-wrap');
+  // orb pulse then fade to black
+  orb.style.transform='scale(1.12)';
+  orb.style.filter='brightness(1.3)';
+  setTimeout(()=>{
+    orb.style.transform='scale(0.6)';
+    orb.style.filter='brightness(0)';
+    orb.style.opacity='0';
+  },200);
+  // black overlay fades in
+  setTimeout(()=>{ overlay.classList.add('show'); },250);
+  // switch screen while black
+  setTimeout(()=>{
+    showScreen('s-chat');
+    document.getElementById('s-chat').classList.add('anim');
+  },550);
+  // fade overlay out
+  setTimeout(()=>{ overlay.classList.remove('show'); },620);
+  // reset orb for if user comes back
+  setTimeout(()=>{
+    orb.style.transition='none';
+    orb.style.transform='';orb.style.filter='';orb.style.opacity='';
+    setTimeout(()=>{ orb.style.transition='transform .3s ease,filter .3s ease'; },50);
+  },1100);
+  // start chat messages
+  setTimeout(()=>{
+    addAI("Hey. I'm you — ten years from now. I made it, and I'm here to pull you forward.\n\nFirst thing I need to know: what does your money situation actually look like right now? Be real with me.");
+    setTimeout(()=>{ document.getElementById('input-area').style.display='flex'; document.getElementById('user-input').focus(); },400);
+  },700);
+}
+function autoResize(el){el.style.height='auto';el.style.height=Math.min(el.scrollHeight,100)+'px';}
+function handleKey(e){if(e.key==='Enter'&&!e.shiftKey){e.preventDefault();sendMessage();}}
+function addAI(text){const m=document.getElementById('messages');const d=document.createElement('div');d.className='msg ai';d.innerHTML=`<div class="avatar-sm" style="width:26px;height:26px;font-size:.72rem;flex-shrink:0;margin-top:2px;">✦</div><div class="bubble">${text.replace(/\n/g,'<br>')}</div>`;m.appendChild(d);m.scrollTop=m.scrollHeight;}
+function addUser(text){const m=document.getElementById('messages');const d=document.createElement('div');d.className='msg user';d.innerHTML=`<div class="bubble">${text}</div>`;m.appendChild(d);m.scrollTop=m.scrollHeight;}
+function showTyping(){const m=document.getElementById('messages');const d=document.createElement('div');d.className='msg ai';d.id='typing';d.innerHTML=`<div class="avatar-sm" style="width:26px;height:26px;font-size:.72rem;flex-shrink:0;">✦</div><div class="bubble"><div class="typing"><span></span><span></span><span></span></div></div>`;m.appendChild(d);m.scrollTop=m.scrollHeight;}
+function removeTyping(){const t=document.getElementById('typing');if(t)t.remove();}
+function delay(ms){return new Promise(r=>setTimeout(r,ms));}
+async function sendMessage(){
+  const inp=document.getElementById('user-input');const text=inp.value.trim();
+  if(!text||isSending)return;isSending=true;document.getElementById('send-btn').disabled=true;
+  inp.value='';inp.style.height='auto';addUser(text);
+  if(chatStep===0){userProfile.current=text;chatStep=1;showTyping();await delay(1200);removeTyping();addAI("Got it. I hear you — that's exactly where I was.\n\nNow tell me: what does your life look like in your head? What are you working toward?");isSending=false;document.getElementById('send-btn').disabled=false;}
+  else if(chatStep===1){userProfile.vision=text;chatStep=2;document.getElementById('input-area').style.display='none';showTyping();await delay(1400);removeTyping();addAI("I see it. Here are the goals that will actually move you there — pick everything that resonates:");showGoals();isSending=false;document.getElementById('send-btn').disabled=false;}
+}
+const GOALS=[
+  {id:'save5k',icon:'💰',title:'Save $5,000 in 6 months',sub:'Short term · Emergency fund'},
+  {id:'invest',icon:'📈',title:'Start investing this month',sub:'Short term · $50/week index funds'},
+  {id:'moveout',icon:'🏠',title:'Move out on my own',sub:'Medium term · 12–18 months'},
+  {id:'sideincome',icon:'🚀',title:'Build income outside my job',sub:'Long term · $1,000/mo side income'},
+  {id:'travel',icon:'✈️',title:'Travel freely, debt-free',sub:'Long term · Travel fund + zero debt'},
+  {id:'credit',icon:'💳',title:'Fix and build my credit',sub:'Short term · 700+ score in 6 months'},
+];
+function showGoals(){
+  const area=document.getElementById('goals-area');const wrap=document.createElement('div');wrap.style.cssText='display:flex;flex-direction:column;gap:.5rem;';
+  wrap.innerHTML=`<div class="goals-label">Pick all that apply</div><div class="goals-grid">${GOALS.map(g=>`<button class="goal-btn" id="g-${g.id}" onclick="toggleGoal('${g.id}')"><div class="goal-check" id="chk-${g.id}"></div><span class="goal-icon">${g.icon}</span><div><div class="goal-title">${g.title}</div><div class="goal-sub">${g.sub}</div></div></button>`).join('')}</div><button class="btn-black" id="confirm-btn" onclick="confirmGoals()" disabled style="opacity:.3;cursor:not-allowed;margin-top:.25rem;">Build my blueprint →</button>`;
+  area.appendChild(wrap);
+}
+function toggleGoal(id){
+  const btn=document.getElementById('g-'+id);btn.classList.toggle('selected');
+  document.getElementById('chk-'+id).textContent=btn.classList.contains('selected')?'✓':'';
+  if(selectedGoals.includes(id))selectedGoals=selectedGoals.filter(x=>x!==id);else selectedGoals.push(id);
+  const cb=document.getElementById('confirm-btn');
+  if(selectedGoals.length>0){cb.disabled=false;cb.style.opacity='1';cb.style.cursor='pointer';}
+  else{cb.disabled=true;cb.style.opacity='.3';cb.style.cursor='not-allowed';}
+}
+async function confirmGoals(){
+  document.getElementById('goals-area').innerHTML='';
+  addUser("My goals: "+selectedGoals.map(id=>GOALS.find(g=>g.id===id).title).join(', ')+'.');
+  showTyping();await delay(1600);removeTyping();
+  addAI("This is it. I know every move to make — because I already made them.\n\nYour blueprint is ready. Let me show you exactly what I built for you.");
+  await delay(900);showScreen('s-paywall');
+}
+function unlockDash(){buildDash();showScreen('s-dash');}
+let doneTodos=[];
+function buildDash(){
+  const todos=['Transfer $50 to savings today','Research one index fund (VOO or FXAIX)','Track every expense this week','Set up automatic savings transfer','Cancel one unused subscription'];
+  document.getElementById('todo-list').innerHTML=todos.map((t,i)=>`<div class="todo-item" id="td-${i}" onclick="toggleTodo(${i})"><div class="chk" id="c-${i}"><span class="chkmark">✓</span></div><span class="todo-text">${t}</span></div>`).join('');
+  const visionItems=[
+    {id:'v0',icon:'💸',title:'$5K Emergency Fund',time:'6 months',photo:null},
+    {id:'v1',icon:'📊',title:'Investing Monthly',time:'3 months',photo:null},
+    {id:'v2',icon:'🏠',title:'Own Space',time:'18 months',photo:null},
+    {id:'v3',icon:'✈️',title:'Debt-Free Travel',time:'2 years',photo:null},
+  ];
+  window.visionItems=visionItems;
+  renderVisionGrid();
+}
+function toggleTodo(i){
+  document.getElementById('td-'+i).classList.toggle('done');
+  if(doneTodos.includes(i))doneTodos=doneTodos.filter(x=>x!==i);else doneTodos.push(i);
+  const pct=Math.round((doneTodos.length/5)*100);
+  document.getElementById('prog-pct').textContent=pct+'%';
+  document.getElementById('prog-fill').style.width=pct+'%';
+}
+function switchTab(tab,btn){
+  document.querySelectorAll('.nav-tab').forEach(t=>t.classList.remove('active'));
+  document.querySelectorAll('.tab-pane').forEach(t=>t.classList.remove('active'));
+  btn.classList.add('active');document.getElementById('tab-'+tab).classList.add('active');
+}
+async function askMentor(){
+  const inp=document.getElementById('mentor-input');const text=inp.value.trim();
+  if(!text)return;inp.value='';inp.style.height='auto';
+  const msgs=document.getElementById('mentor-msgs');
+  const ud=document.createElement('div');ud.className='msg user';ud.innerHTML=`<div class="bubble">${text}</div>`;msgs.appendChild(ud);
+  const td=document.createElement('div');td.className='msg ai';td.id='m-typing';td.innerHTML=`<div class="avatar-sm" style="width:26px;height:26px;font-size:.72rem;flex-shrink:0;">✦</div><div class="bubble"><div class="typing"><span></span><span></span><span></span></div></div>`;msgs.appendChild(td);msgs.scrollTop=msgs.scrollHeight;
+  try{
+    const res=await fetch(API_URL,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({model:'claude-sonnet-4-20250514',max_tokens:1000,system:`You are the user's future self — confident, warm, direct. You already achieved financial freedom. Speak as their future self in first person. 2-3 sentences max, grounded and motivating. User context: ${JSON.stringify(userProfile)}`,messages:[{role:'user',content:text}]})});
+    const data=await res.json();document.getElementById('m-typing').remove();
+    const reply=data.content?.[0]?.text||"Keep going. Every move today is building the version of you I am now.";
+    const ad=document.createElement('div');ad.className='msg ai';ad.innerHTML=`<div class="avatar-sm" style="width:26px;height:26px;font-size:.72rem;flex-shrink:0;">✦</div><div class="bubble">${reply}</div>`;msgs.appendChild(ad);msgs.scrollTop=msgs.scrollHeight;
+  }catch(e){
+    document.getElementById('m-typing').remove();
+    const ad=document.createElement('div');ad.className='msg ai';ad.innerHTML=`<div class="avatar-sm" style="width:26px;height:26px;font-size:.72rem;flex-shrink:0;">✦</div><div class="bubble">Stay focused. Every good decision you make today is one I remember making too.</div>`;msgs.appendChild(ad);msgs.scrollTop=msgs.scrollHeight;
+  }
+}
+
+function renderVisionGrid(){
+  const grid=document.getElementById('vision-grid');
+  grid.innerHTML=window.visionItems.map(v=>`
+    <div class="vision-card" id="vc-${v.id}" onclick="visionCardClick('${v.id}')">
+      ${v.photo
+        ? `<img class="vision-card-photo" src="${v.photo}" alt="${v.title}">
+           <div class="vision-card-overlay"></div>
+           <div class="vision-card-info">
+             <div class="vision-title">${v.title}</div>
+             <div class="vision-time">${v.time}</div>
+           </div>
+           <button class="vision-remove" onclick="removeVisionPhoto(event,'${v.id}')">✕</button>`
+        : `<div class="vision-card-default">
+             <div class="vision-icon">${v.icon}</div>
+             <div class="vision-title" style="color:#000;font-size:.76rem;">${v.title}</div>
+             <div class="vision-time">${v.time}</div>
+             <div style="margin-top:.5rem;font-size:.68rem;color:#ccc;letter-spacing:.04em;">tap to add photo</div>
+           </div>`
+      }
+    </div>
+  `).join('')+`
+    <div class="vision-card" onclick="addVisionCard()">
+      <div class="vision-add">
+        <div class="vision-add-icon">+</div>
+        <div class="vision-add-text">Add goal</div>
+      </div>
+    </div>`;
+}
+
+let pendingVisionId=null;
+function visionCardClick(id){
+  pendingVisionId=id;
+  document.getElementById('vision-file-input').click();
+}
+
+function handleVisionPhoto(e){
+  const file=e.target.files[0];
+  if(!file||!pendingVisionId)return;
+  const reader=new FileReader();
+  reader.onload=function(ev){
+    const item=window.visionItems.find(v=>v.id===pendingVisionId);
+    if(item){item.photo=ev.target.result;}
+    renderVisionGrid();
+    e.target.value='';
+  };
+  reader.readAsDataURL(file);
+}
+
+function removeVisionPhoto(e,id){
+  e.stopPropagation();
+  const item=window.visionItems.find(v=>v.id===id);
+  if(item){item.photo=null;}
+  renderVisionGrid();
+}
+
+function addVisionCard(){
+  const title=prompt('Goal name:');
+  if(!title)return;
+  const time=prompt('Timeline (e.g. 6 months, 2 years):') || '';
+  const id='v'+Date.now();
+  window.visionItems.push({id,icon:'🎯',title,time,photo:null});
+  renderVisionGrid();
+}
+</script>
+<div class="page-overlay" id="overlay"></div>
+</body>
+</html>
